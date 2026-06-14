@@ -14,6 +14,8 @@
 - 统一异常处理：业务异常、404、参数校验错误、未知错误都会返回固定 JSON 结构
 - 数据库连接健康检查：`GET /api/v1/health/db`
 - CORS 配置，方便前端本地联调
+- 登录模块：`POST /api/v1/auth/login`、`POST /api/v1/auth/logout`、`GET /api/v1/auth/profile`
+- 启动时自动创建数据库表，并初始化默认用户 `admin / 123456`、`user / 123456`
 
 ## 本地启动
 
@@ -37,11 +39,33 @@ DATABASE_URL="sqlite:///./app.db"
 这表示数据库文件会生成在后端项目根目录的 `app.db`。后续如果切换到
 PostgreSQL 或 MySQL，主要就是改这个连接字符串。
 
+登录模块还会读取：
+
+```bash
+SECRET_KEY="dev-secret-change-me"
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+DEFAULT_ADMIN_USERNAME="admin"
+DEFAULT_ADMIN_PASSWORD="123456"
+DEFAULT_ADMIN_ROLE="admin"
+DEFAULT_USERNAME="user"
+DEFAULT_PASSWORD="123456"
+DEFAULT_USER_ROLE="user"
+```
+
+生产环境必须替换 `SECRET_KEY` 和默认密码。
+
 启动后访问：
 
 - API 文档：http://127.0.0.1:8000/docs
 - 健康检查：http://127.0.0.1:8000/api/v1/health
 - 数据库健康检查：http://127.0.0.1:8000/api/v1/health/db
+
+默认登录账号：
+
+```text
+admin / 123456
+user / 123456
+```
 
 ## 统一响应格式
 
@@ -86,12 +110,18 @@ app/
                       # 全局异常处理器
   db/
     base.py           # SQLAlchemy ORM 基类
+    init_db.py        # 创建表并初始化默认用户
     session.py        # 数据库 engine、SessionLocal、get_db
+  models/
+    user.py           # 用户 ORM 模型
   schemas/
+    auth.py           # 登录、用户信息响应模型
     response.py       # 统一响应模型 ApiResponse
   api/
+    deps.py           # 当前登录用户等通用依赖
     v1/
       router.py       # v1 路由统一入口
+      auth.py         # 登录、退出、当前用户接口
       health.py       # 服务和数据库健康检查接口
 ```
 

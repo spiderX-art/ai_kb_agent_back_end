@@ -1,9 +1,19 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.exception_handlers import register_exception_handlers
+from app.db.init_db import init_db
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    init_db()
+    yield
 
 
 def create_app() -> FastAPI:
@@ -15,6 +25,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
+        lifespan=lifespan,
     )
 
     # CORS 允许本地前端开发服务器访问后端 API。

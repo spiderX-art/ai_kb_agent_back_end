@@ -28,6 +28,14 @@ class Settings(BaseSettings):
         ]
     )
     database_url: str = "sqlite:///./app.db"
+    secret_key: str = "dev-secret-change-me"
+    access_token_expire_minutes: int = 60 * 24
+    default_admin_username: str = "admin"
+    default_admin_password: str = "123456"
+    default_admin_role: str = "admin"
+    default_username: str = "user"
+    default_password: str = "123456"
+    default_user_role: str = "user"
 
     # 先放配置入口，后续接入 OpenAI 时会从这里读取。
     openai_api_key: str | None = None

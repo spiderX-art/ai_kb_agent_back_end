@@ -15,6 +15,7 @@
 - 数据库连接健康检查：`GET /api/v1/health/db`
 - CORS 配置，方便前端本地联调
 - 登录模块：`POST /api/v1/auth/login`、`POST /api/v1/auth/logout`、`GET /api/v1/auth/profile`
+- 知识库管理模块：知识库列表、详情、新建、编辑、删除
 - 启动时自动创建数据库表，并初始化默认用户 `admin / 123456`、`user / 123456`
 
 ## 本地启动
@@ -123,7 +124,19 @@ app/
       router.py       # v1 路由统一入口
       auth.py         # 登录、退出、当前用户接口
       health.py       # 服务和数据库健康检查接口
+      knowledge_bases.py
+                    # 知识库管理接口
 ```
+
+## 知识库管理接口
+
+普通用户和管理员都可以查看知识库，只有管理员可以新增、编辑和删除。
+
+- `GET /api/v1/knowledge-bases`
+- `POST /api/v1/knowledge-bases`
+- `GET /api/v1/knowledge-bases/{knowledge_base_id}`
+- `PUT /api/v1/knowledge-bases/{knowledge_base_id}`
+- `DELETE /api/v1/knowledge-bases/{knowledge_base_id}`
 
 ## 学习提示
 

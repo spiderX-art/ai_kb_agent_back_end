@@ -49,3 +49,16 @@ def get_current_user(
         )
 
     return user
+
+
+def get_current_admin_user(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    if current_user.role != "admin":
+        raise AppError(
+            "只有管理员可以执行该操作",
+            code=ErrorCode.FORBIDDEN,
+            status_code=403,
+        )
+
+    return current_user

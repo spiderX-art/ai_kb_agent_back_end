@@ -41,3 +41,8 @@ class KnowledgeBase(Base):
     )
 
     creator = relationship("User")
+    documents = relationship(
+        "Document",
+        back_populates="knowledge_base",
+        cascade="all, delete-orphan",
+    )

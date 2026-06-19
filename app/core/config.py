@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     default_username: str = "user"
     default_password: str = "123456"
     default_user_role: str = "user"
+    document_storage_dir: str = "storage/documents"
+    max_document_file_size_mb: int = 50
 
     # 先放配置入口，后续接入 OpenAI 时会从这里读取。
     openai_api_key: str | None = None

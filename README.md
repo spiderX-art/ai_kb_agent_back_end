@@ -16,6 +16,7 @@
 - CORS 配置，方便前端本地联调
 - 登录模块：`POST /api/v1/auth/login`、`POST /api/v1/auth/logout`、`GET /api/v1/auth/profile`
 - 知识库管理模块：知识库列表、详情、新建、编辑、删除
+- 文档管理模块：文档列表分页/排序/筛选、元数据创建、真实文件上传、下载、解析状态流转、删除
 - 启动时自动创建数据库表，并初始化默认用户 `admin / 123456`、`user / 123456`
 
 ## 本地启动
@@ -51,9 +52,12 @@ DEFAULT_ADMIN_ROLE="admin"
 DEFAULT_USERNAME="user"
 DEFAULT_PASSWORD="123456"
 DEFAULT_USER_ROLE="user"
+DOCUMENT_STORAGE_DIR="storage/documents"
+MAX_DOCUMENT_FILE_SIZE_MB=50
 ```
 
-生产环境必须替换 `SECRET_KEY` 和默认密码。
+生产环境必须替换 `SECRET_KEY` 和默认密码。上传文档默认保存在后端项目根目录的
+`storage/documents`，该目录不会提交到 Git。
 
 启动后访问：
 
@@ -137,6 +141,23 @@ app/
 - `GET /api/v1/knowledge-bases/{knowledge_base_id}`
 - `PUT /api/v1/knowledge-bases/{knowledge_base_id}`
 - `DELETE /api/v1/knowledge-bases/{knowledge_base_id}`
+
+## 文档管理接口
+
+普通用户和管理员都可以查看与下载文档，只有管理员可以上传、更新状态和删除。
+
+- `GET /api/v1/documents`：支持 `page`、`page_size`、`sort_by`、`sort_order`、`knowledge_base_id`、`status`、`file_type`、`keyword`
+- `POST /api/v1/documents`
+- `POST /api/v1/documents/upload`
+- `GET /api/v1/documents/{document_id}`
+- `GET /api/v1/documents/{document_id}/download`
+- `POST /api/v1/documents/{document_id}/parse`
+- `PATCH /api/v1/documents/{document_id}/status`
+- `DELETE /api/v1/documents/{document_id}`
+
+当前上传接口会保存原始文件和文档元数据。解析接口暂只做解析任务元数据与状态流转，
+不抽取正文内容；支持 PDF、TXT、MD 发起解析，DOCX 先保留上传、下载和预览下载能力。
+解析状态按 `uploaded -> parsing -> completed/failed` 流转，失败后可重新发起解析。
 
 ## 学习提示
 

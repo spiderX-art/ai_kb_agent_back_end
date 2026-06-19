@@ -4,6 +4,14 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 DocumentStatus = Literal["uploaded", "parsing", "completed", "failed"]
+DocumentListSortBy = Literal[
+    "uploaded_at",
+    "file_name",
+    "file_type",
+    "status",
+    "knowledge_base_name",
+]
+SortOrder = Literal["asc", "desc"]
 
 
 class DocumentCreate(BaseModel):
@@ -28,6 +36,17 @@ class DocumentCreate(BaseModel):
 
 class DocumentStatusUpdate(BaseModel):
     status: DocumentStatus
+    parse_progress: int | None = Field(default=None, ge=0, le=100)
+    parse_chunk_count: int | None = Field(default=None, ge=0)
+    parse_error_message: str | None = Field(default=None, max_length=1000)
+
+    @field_validator("parse_error_message")
+    @classmethod
+    def strip_parse_error_message(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        message = value.strip()
+        return message or None
 
 
 class DocumentResponse(BaseModel):
@@ -37,7 +56,13 @@ class DocumentResponse(BaseModel):
     file_name: str
     file_type: str
     file_size: int
+    has_file: bool = False
     status: str
+    parse_progress: int
+    parse_chunk_count: int
+    parse_error_message: str | None = None
+    parse_started_at: datetime | None = None
+    parse_finished_at: datetime | None = None
     created_by_id: int
     uploaded_at: datetime
     updated_at: datetime
@@ -45,3 +70,11 @@ class DocumentResponse(BaseModel):
     model_config = {
         "from_attributes": True,
     }
+
+
+class DocumentListResponse(BaseModel):
+    items: list[DocumentResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

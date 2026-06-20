@@ -78,3 +78,26 @@ class DocumentListResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+
+class DocumentChunkResponse(BaseModel):
+    id: int
+    document_id: int
+    knowledge_base_id: int
+    chunk_index: int
+    content: str
+    content_length: int
+    page_number: int | None = None
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class DocumentChunkListResponse(BaseModel):
+    items: list[DocumentChunkResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

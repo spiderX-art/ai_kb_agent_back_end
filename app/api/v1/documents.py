@@ -1,4 +1,5 @@
 from typing import Annotated
+import logging
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import FileResponse
@@ -8,8 +9,9 @@ from sqlalchemy.orm import Session, contains_eager
 from app.api.deps import get_current_admin_user, get_current_user
 from app.core.errors import AppError, ErrorCode
 from app.db.session import get_db
-from app.models import Document, KnowledgeBase, User
+from app.models import Document, DocumentChunk, KnowledgeBase, User
 from app.schemas.document import (
+    DocumentChunkListResponse,
     DocumentCreate,
     DocumentListResponse,
     DocumentListSortBy,
@@ -25,10 +27,14 @@ from app.services.document_files import (
     normalize_document_file_type,
     save_uploaded_document_file,
 )
-from app.services.document_parsing import apply_document_parse_status
+from app.services.document_parsing import (
+    apply_document_parse_status,
+    rebuild_document_text_chunks,
+)
 from app.services.knowledge_bases import get_knowledge_base_or_404
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+logger = logging.getLogger(__name__)
 
 
 def _get_document_or_404(db: Session, document_id: int) -> Document:
@@ -247,6 +253,40 @@ def start_document_parse(
     apply_document_parse_status(document, status="parsing")
     db.commit()
     db.refresh(document)
+
+    try:
+        chunk_count = rebuild_document_text_chunks(db, document)
+        apply_document_parse_status(
+            document,
+            status="completed",
+            parse_chunk_count=chunk_count,
+        )
+        db.commit()
+    except AppError as exc:
+        db.rollback()
+        db.refresh(document)
+        apply_document_parse_status(
+            document,
+            status="failed",
+            parse_progress=0,
+            parse_chunk_count=0,
+            parse_error_message=exc.message,
+        )
+        db.commit()
+    except Exception as exc:
+        logger.exception("Failed to parse document %s", document_id, exc_info=exc)
+        db.rollback()
+        db.refresh(document)
+        apply_document_parse_status(
+            document,
+            status="failed",
+            parse_progress=0,
+            parse_chunk_count=0,
+            parse_error_message="文档解析失败",
+        )
+        db.commit()
+
+    db.refresh(document)
     return success_response(_to_document_response(document))
 
 
@@ -268,6 +308,40 @@ def update_document_status(
     db.commit()
     db.refresh(document)
     return success_response(_to_document_response(document))
+
+
+@router.get("/{document_id}/chunks", response_model=ApiResponse[DocumentChunkListResponse])
+def list_document_chunks(
+    document_id: int,
+    _: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+    page: Annotated[int, Query(gt=0)] = 1,
+    page_size: Annotated[int, Query(gt=0, le=100)] = 20,
+) -> ApiResponse[DocumentChunkListResponse]:
+    _get_document_or_404(db, document_id)
+    offset = (page - 1) * page_size
+    count_stmt = select(func.count()).select_from(DocumentChunk).where(
+        DocumentChunk.document_id == document_id
+    )
+    total = db.scalar(count_stmt) or 0
+    total_pages = (total + page_size - 1) // page_size if total else 0
+    chunks = db.scalars(
+        select(DocumentChunk)
+        .where(DocumentChunk.document_id == document_id)
+        .order_by(DocumentChunk.chunk_index.asc())
+        .offset(offset)
+        .limit(page_size)
+    ).all()
+
+    return success_response(
+        DocumentChunkListResponse(
+            items=chunks,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+        )
+    )
 
 
 @router.delete("/{document_id}", response_model=ApiResponse[None])

@@ -75,6 +75,11 @@ class Document(Base):
 
     knowledge_base = relationship("KnowledgeBase", back_populates="documents")
     creator = relationship("User")
+    chunks = relationship(
+        "DocumentChunk",
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def uploaded_at(self) -> datetime:

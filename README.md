@@ -17,6 +17,7 @@
 - 登录模块：`POST /api/v1/auth/login`、`POST /api/v1/auth/logout`、`GET /api/v1/auth/profile`
 - 知识库管理模块：知识库列表、详情、新建、编辑、删除
 - 文档管理模块：文档列表分页/排序/筛选、元数据创建、真实文件上传、下载、解析状态流转、删除
+- 智能问答模块：会话列表、会话消息、基于知识库检索的抽取式问答和引用来源
 - 启动时自动创建数据库表，并初始化默认用户 `admin / 123456`、`user / 123456`
 
 ## 本地启动
@@ -155,9 +156,18 @@ app/
 - `PATCH /api/v1/documents/{document_id}/status`
 - `DELETE /api/v1/documents/{document_id}`
 
-当前上传接口会保存原始文件和文档元数据。解析接口暂只做解析任务元数据与状态流转，
-不抽取正文内容；支持 PDF、TXT、MD 发起解析，DOCX 先保留上传、下载和预览下载能力。
-解析状态按 `uploaded -> parsing -> completed/failed` 流转，失败后可重新发起解析。
+当前上传接口会保存原始文件和文档元数据。解析接口会抽取 PDF、TXT、MD 正文并写入文本分片，
+DOCX 先保留上传、下载和预览下载能力。解析状态按 `uploaded -> parsing -> completed/failed`
+流转，失败后可重新发起解析。
+
+## 智能问答接口
+
+普通用户和管理员都可以基于自己创建的会话提问和查看历史。当前回答使用本地检索结果生成，
+返回答案时会附带命中的文档分片作为引用来源。
+
+- `POST /api/v1/chat/messages`
+- `GET /api/v1/chat/conversations`
+- `GET /api/v1/chat/conversations/{conversation_id}/messages`
 
 ## 学习提示
 

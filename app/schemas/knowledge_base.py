@@ -59,3 +59,35 @@ class KnowledgeBaseResponse(BaseModel):
     model_config = {
         "from_attributes": True,
     }
+
+
+class KnowledgeBaseSearchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=500)
+    top_k: int = Field(default=5, ge=1, le=20)
+
+    @field_validator("query")
+    @classmethod
+    def strip_query(cls, value: str) -> str:
+        query = value.strip()
+        if not query:
+            raise ValueError("搜索内容不能为空")
+        return query
+
+
+class KnowledgeBaseSearchResult(BaseModel):
+    chunk_id: int
+    document_id: int
+    document_file_name: str
+    file_type: str
+    chunk_index: int
+    content: str
+    content_length: int
+    page_number: int | None = None
+    similarity: float
+
+
+class KnowledgeBaseSearchResponse(BaseModel):
+    query: str
+    embedding_model: str
+    total: int
+    items: list[KnowledgeBaseSearchResult]

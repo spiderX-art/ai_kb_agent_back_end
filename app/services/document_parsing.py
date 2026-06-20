@@ -7,7 +7,7 @@ from app.core.errors import AppError, ErrorCode
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
-from app.models import Document, DocumentChunk
+from app.models import Document, DocumentChunk, DocumentChunkEmbedding
 from app.services.document_files import document_file_path
 
 PARSABLE_DOCUMENT_FILE_TYPES = {"PDF", "TXT", "MD"}
@@ -224,6 +224,11 @@ def parse_document_text_chunks(document: Document) -> list[ParsedTextChunk]:
 
 def rebuild_document_text_chunks(db: Session, document: Document) -> int:
     chunks = parse_document_text_chunks(document)
+    db.execute(
+        delete(DocumentChunkEmbedding).where(
+            DocumentChunkEmbedding.document_id == document.id
+        )
+    )
     db.execute(delete(DocumentChunk).where(DocumentChunk.document_id == document.id))
     db.add_all(
         DocumentChunk(
@@ -236,6 +241,7 @@ def rebuild_document_text_chunks(db: Session, document: Document) -> int:
         )
         for index, chunk in enumerate(chunks)
     )
+    db.flush()
     return len(chunks)
 
 

@@ -41,3 +41,9 @@ class DocumentChunk(Base):
 
     document = relationship("Document", back_populates="chunks")
     knowledge_base = relationship("KnowledgeBase")
+    embedding = relationship(
+        "DocumentChunkEmbedding",
+        back_populates="chunk",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )

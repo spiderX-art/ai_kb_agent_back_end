@@ -27,6 +27,7 @@ from app.services.document_files import (
     normalize_document_file_type,
     save_uploaded_document_file,
 )
+from app.services.document_embeddings import rebuild_document_chunk_embeddings
 from app.services.document_parsing import (
     apply_document_parse_status,
     rebuild_document_text_chunks,
@@ -256,6 +257,7 @@ def start_document_parse(
 
     try:
         chunk_count = rebuild_document_text_chunks(db, document)
+        rebuild_document_chunk_embeddings(db, document.id)
         apply_document_parse_status(
             document,
             status="completed",

@@ -66,6 +66,16 @@ MAX_DOCUMENT_FILE_SIZE_MB=50
 - 健康检查：http://127.0.0.1:8000/api/v1/health
 - 数据库健康检查：http://127.0.0.1:8000/api/v1/health/db
 
+## 运行测试
+
+```bash
+pip install -e '.[test]'
+pytest
+```
+
+测试会使用临时 SQLite 数据库和临时文档存储目录，不会读写本地开发用的 `app.db`
+和 `storage/documents`。
+
 默认登录账号：
 
 ```text
